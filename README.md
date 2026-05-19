@@ -1,6 +1,52 @@
 # Sindri: A Spiking Neural Network -> FPGA Compilation toolchain
 ![Toolchain diagram](img/toolchain.pdf)
 
+#Environment Setup 
+A VS Code Dev Container environment for the ISCAS26 Tutorial. You can run this on the cloud on Github Codespace.
+
+---
+
+## GitHub Codespaces (no local installation required)
+
+1. On this repository page, click **Code (Green button) → Codespaces → Create codespace on main**
+2. Wait for the container to build (~10-15 min first time — Nix packages are fetched and the Python venv is created)
+3. A VS Code editor opens in your browser — the environment is ready
+
+To reopen a stopped codespace: **Code → Codespaces → your codespace name**.
+
+> **Note:** GitHub Free accounts include 60 core-hours and 15 GB storage per month. A 2-core codespace uses 1 hour of quota per hour of runtime. You can get more quota with your education account.
+
+
+## Verifying the environment
+
+After the container starts, open a terminal (**Terminal → New Terminal** or `` Ctrl+` ``) and run:
+
+```bash
+devenv shell
+```
+Should take around 5 minutes or shorter depending on the build. Then to test running do the following.
+
+```bash
+python 1-internal-simulation/notebooks/1-1-lif.py
+```
+
+An error around `unsqueeze` near line 99 means the imports and environment are working correctly — that notebook currently reaches a known model-shape issue, not an environment problem.
+
+---
+
+## Troubleshooting
+
+### Python interpreter not found
+
+If imports show missing packages after the container starts:
+
+1. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Run **Python: Select Interpreter**
+3. Choose `.devenv/state/venv/bin/python`
+
+### Still broken after rebuild
+
+Try a clean rebuild: **Dev Containers: Rebuild Without Cache** from the Command Palette. This discards cached layers and re-downloads the base image.
 
 # Flow
 ## Stage 1: Internal Simulation
