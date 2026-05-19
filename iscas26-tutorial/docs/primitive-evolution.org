@@ -1,0 +1,636 @@
+#+TITLE: NIR Primitive Evolution: I -> LI -> LIF
+#+SUBTITLE: ISCAS26 Tutorial -- Hands-on NIR Primitive Development
+#+OPTIONS: toc:2 num:t
+
+* What this is
+
+A live-coding script for growing one hardware neuron primitive through
+three NIR node types, in increasing order of biological detail:
+
+1. *I*   -- Integrate.               v[t] = v[t-1] + input[t]
+2. *LI*  -- Leaky Integrate.          v[t] = alpha*v[t-1] + input[t]
+3. *LIF* -- Leaky Integrate-and-Fire. v[t] = alpha*v[t-1] + (1-alpha)*input[t],
+            emit a spike and reset when v[t] >= v_threshold.
+
+Each step is a small, self-contained edit to the SpinalHDL primitive in
+=iscas26-tutorial/primitive_implementations/=. The point of the exercise
+is *not* the neuron maths -- it is to see how a NIR node type is wired
+into NIR2FPGA: a parameter mapping (=types/=), a dispatch entry
+(=PrimitiveHW.scala=), and a hardware implementation (=impl/=).
+
+** Branches
+
+| Branch     | Primitives installed      | Audience                             |
+|------------+---------------------------+--------------------------------------|
+| =demo=     | Linear, I                 | Presenter -- live-codes Part 1 + 2   |
+| =main=     | Linear, I, LI             | Attendees -- the leak is done; do LIF (Part 2) |
+| =solution= | Linear, I, LI, LIF        | Reference / answer key               |
+
+Presenter: start on =demo=, follow Part 1 then Part 2.
+Attendees:  start on =main=, follow Part 2 only.
+
+* The codebase: three files per primitive
+
+#+begin_example
+iscas26-tutorial/primitive_implementations/
+  PrimitiveHW.scala     <- dispatch: NIR params -> *HW builder
+  types/i.scala         <- IParams   -> Neuron.Config   (parameter mapping)
+  types/li.scala        <- LIParams  -> Neuron.Config
+  types/lif.scala       <- LIFParams -> Neuron.Config
+  impl/Neuron.scala     <- the actual hardware (a streaming datapath)
+  impl/Affine.scala     <- the Linear/Affine layer (unchanged here)
+#+end_example
+
+The dataflow when NIR2FPGA compiles a graph:
+
+#+begin_example
+  NIR node (e.g. nir.LIF)
+    -> PrimitiveHW.create  matches the *Params type
+    -> LIFHW.makeHardware   maps NIR params into a Neuron.Config
+    -> Neuron(config)       elaborates the SpinalHDL datapath
+#+end_example
+
+=Neuron.scala= is *one unified component*. Its behaviour is selected by
+which =Config= fields are populated:
+
+| Config has...                   | Behaves as |
+|----------------------------------+------------|
+| (no tau)                         | I          |
+| tau                              | LI         |
+| tau + v_reset + v_threshold      | LIF        |
+
+So "adding LIF" means: (a) teach =Neuron= the extra datapath stages, and
+(b) add the =types/= mapping + =PrimitiveHW= dispatch that feed it.
+
+* The Neuron datapath
+
+=Neuron= is a streaming pipeline. One input fragment = one neuron's
+input current for one timestep. Membrane voltages live in =mem= (one
+word per neuron). Each stage is a =Stream.map= that reads the previous
+stage:
+
+#+begin_example
+  I  :  memReadWithPayload --> integrated --------------------> output
+  LI :  memReadWithPayload --> leaked --> integrated ---------> output
+  LIF:  memReadWithPayload --> leaked --> integrated --> afterFiring --> output
+#+end_example
+
+Each step below adds a stage and re-points the stages that follow it.
+
+* How to test
+
+The notebook =iscas26-tutorial/neuron/2-n2f.py= compiles a trained
+classifier (=Linear -> LIF=) and simulates it. It therefore *only runs
+once LIF exists* -- it is the finish line for Part 2.
+
+#+begin_src bash
+# from the repo root, inside the devenv shell
+cd iscas26-tutorial/neuron
+jupytext --to notebook --execute 2-n2f.py     # or run 2-n2f.ipynb
+#+end_src
+
+A faster check after each step is to compile the primitives directly:
+
+#+begin_src bash
+cd 2-compilation
+sbt -DprimitivesDir=$(pwd)/../iscas26-tutorial/primitive_implementations compile
+#+end_src
+
+* PART 1 -- I -> LI : add the leak
+:PROPERTIES:
+:AUDIENCE: presenter (demo branch)
+:END:
+
+** Concept
+
+A plain integrator never forgets: every input current is added to the
+membrane forever. A *leaky* integrator multiplies the membrane by a
+decay factor =alpha= each timestep, so old input fades away:
+
+: v[t] = alpha * v[t-1] + input[t]
+
+=alpha= comes from the membrane time constant =tau=. We use the simple
+discrete approximation =alpha = 1 - 2/tau=. With =tau = None= we keep
+=alpha = 1=, i.e. no leak -- so the same code still serves the I node.
+
+** Step 1.1 -- =impl/Neuron.scala= : add =tau= to the Config
+
+The Config is how a =types/= mapping hands parameters to the datapath.
+Add an optional =tau=.
+
+FIND the =Config= at the bottom of the file:
+
+#+begin_src scala
+  case class Config(
+    input: Activations.Config,
+    quants: Map[String, QuantizationConfig]
+  )
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+  case class Config(
+    input: Activations.Config,
+    quants: Map[String, QuantizationConfig],
+    tau: Option[Double] = None
+  )
+#+end_src
+
+The default =None= means =types/i.scala= keeps compiling untouched.
+
+** Step 1.2 -- =impl/Neuron.scala= : add the leak stage
+
+FIND the end of the =memReadWithPayload= block and the =// Integrate=
+comment that follows it:
+
+#+begin_src scala
+  val memReadWithPayload = mem.streamReadSync(
+    input.translateWith(addr),
+    input.payload
+  )
+
+  // Integrate: v[t] = v[t-1] + input[t]
+#+end_src
+
+REPLACE with (i.e. insert the leak stage between them):
+
+#+begin_src scala
+  val memReadWithPayload = mem.streamReadSync(
+    input.translateWith(addr),
+    input.payload
+  )
+
+  // Leak factor: alpha = 1 - 2/tau. With tau = None, alpha = 1 (no leak),
+  // which makes this neuron behave as a plain integrator (I).
+  val alpha = c.tau match {
+    case Some(tau) => 1.0 - 2.0 / tau
+    case None      => 1.0
+  }
+
+  val alphaFactor = Vec(AF(alpha, c.quants("v_mem").qformat), c.input.width)
+
+  // Leak: alpha * v[t-1]
+  val leaked = memReadWithPayload.map { p =>
+    val state = p.value
+    val input = p.linked
+
+    val leakedState = Vec(
+      state
+        .zip(alphaFactor)
+        .map { case (v, alpha) =>
+          (alpha * v)
+            .fixTo(c.quants("v_mem").qformat, RoundType.CEIL)
+        }
+    )
+
+    TupleBundle(leakedState, input)
+  }
+
+  // Integrate: v[t] = alpha * v[t-1] + input[t]
+#+end_src
+
+=leaked= is a new pipeline stage: it reads the membrane =mem= and scales
+it by =alpha=. It carries the input payload through untouched (the
+=TupleBundle=) so the next stage can still see it.
+
+** Step 1.3 -- =impl/Neuron.scala= : feed =integrated= from =leaked=
+
+=integrated= currently reads =memReadWithPayload= directly. Re-point it
+at the new =leaked= stage. (The tuple field names change: =leaked=
+emits =(leakedState, input)=, accessed as =_1= / =_2=.)
+
+FIND the head of the =integrated= block:
+
+#+begin_src scala
+  val integrated = memReadWithPayload.map { p =>
+    val state = p.value
+    val input = p.linked
+
+    val integratedState = Vec(state.zip(input.fragment.value).map { case (v, inp) =>
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+  val integrated = leaked.map { p =>
+    val leakedState = p._1
+    val input       = p._2
+
+    val integratedState = Vec(leakedState.zip(input.fragment.value).map { case (v, inp) =>
+#+end_src
+
+Nothing after =integrated= changes: =mem.write= and the output stage
+still read =integrated=.
+
+** Step 1.4 -- create =types/li.scala=
+
+This maps an =LIParams= NIR node onto =Neuron.Config=. It is the LI twin
+of =types/i.scala=; the only new line is =tau=.
+
+CREATE =iscas26-tutorial/primitive_implementations/types/li.scala=:
+
+#+begin_src scala
+package NIR2FPGA.Primitives
+
+import spinal.core._
+import spinal.lib._
+import nir._
+
+import NIR2FPGA.ConfigJSON
+import NIR2FPGA.Activations
+import NIR2FPGA.Primitives.Implementations.Neuron
+
+final case class LIHW(
+  id: String,
+  params: LIParams,
+  config: ConfigJSON
+) extends PrimitiveHW[LIParams] {
+
+  /* alpha = 1 - 2/tau */
+  /* v[t] = alpha * v[t-1] + input[t] */
+
+  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
+    // For now, assert that v_leak is zero
+    val vLeakValue = NodeHelper.extractScalar(params.v_leak)
+    require(vLeakValue == 0.0, s"LIParams: v_leak must be zero for now, got ${vLeakValue}")
+
+    val liconfig = Neuron.Config(
+      input = inputAct.c,
+      quants = config.quantizations(id),
+      tau = Some(NodeHelper.extractScalar(params.tau))
+    )
+
+    val neuron = Neuron(liconfig).setName("li")
+    (neuron.input, neuron.output)
+  }
+
+}
+#+end_src
+
+** Step 1.5 -- =PrimitiveHW.scala= : dispatch =LIParams=
+
+FIND the =params match= block in =PrimitiveHW.create=:
+
+#+begin_src scala
+      case p: IParams      => IHW(id, p, config)
+      case p: AffineParams => AffineHW(id, p, config)
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+      case p: IParams      => IHW(id, p, config)
+      case p: LIParams     => LIHW(id, p, config)
+      case p: AffineParams => AffineHW(id, p, config)
+#+end_src
+
+** Checkpoint -- Part 1
+
+#+begin_src bash
+cd 2-compilation
+sbt -DprimitivesDir=$(pwd)/../iscas26-tutorial/primitive_implementations compile
+#+end_src
+
+Expect =done compiling= / =success=. The codebase is now equivalent to
+the =main= branch (Linear + I + LI). This is where attendees begin.
+
+* PART 2 -- LI -> LIF : add fire-and-reset
+:PROPERTIES:
+:AUDIENCE: presenter + attendees (main branch)
+:END:
+
+** Concept
+
+A leaky integrator only ever produces a continuous membrane voltage. A
+*spiking* neuron adds a threshold: when =v[t]= crosses =v_threshold= it
+
+1. emits a spike (output becomes 1 instead of the voltage), and
+2. resets the membrane to 0.
+
+LIF also *normalises* the input by =(1 - alpha)=, so the membrane has a
+bounded steady state regardless of =tau=:
+
+: v[t] = alpha * v[t-1] + (1 - alpha) * input[t]
+
+We add one more datapath stage, =afterFiring=, after =integrated=.
+
+** Step 2.1 -- =impl/Neuron.scala= : add =v_reset= / =v_threshold= to the Config
+
+FIND the =Config=:
+
+#+begin_src scala
+  case class Config(
+    input: Activations.Config,
+    quants: Map[String, QuantizationConfig],
+    tau: Option[Double] = None
+  )
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+  case class Config(
+    input: Activations.Config,
+    quants: Map[String, QuantizationConfig],
+    tau: Option[Double] = None,
+    v_reset: Option[Double] = None,
+    v_threshold: Option[Double] = None
+  )
+#+end_src
+
+Both default to =None=, so =types/i.scala= and =types/li.scala= keep
+compiling: the presence of these fields is exactly what tells =Neuron=
+to behave as LIF.
+
+** Step 2.2 -- =impl/Neuron.scala= : the =isLIF= flag and input scaling
+
+FIND the =memReadWithPayload= block through to =alphaFactor=:
+
+#+begin_src scala
+  val memReadWithPayload = mem.streamReadSync(
+    input.translateWith(addr),
+    input.payload
+  )
+
+  // Leak factor: alpha = 1 - 2/tau. With tau = None, alpha = 1 (no leak),
+  // which makes this neuron behave as a plain integrator (I).
+  val alpha = c.tau match {
+    case Some(tau) => 1.0 - 2.0 / tau
+    case None      => 1.0
+  }
+
+  val alphaFactor = Vec(AF(alpha, c.quants("v_mem").qformat), c.input.width)
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+  val memReadWithPayload = mem.streamReadSync(
+    input.translateWith(addr),
+    input.payload
+  )
+
+  val isLIF = c.v_threshold.isDefined && c.v_reset.isDefined
+
+  // Leak factor: alpha = 1 - 2/tau. With tau = None, alpha = 1 (no leak),
+  // which makes this neuron behave as a plain integrator (I).
+  val alpha = c.tau match {
+    case Some(tau) => 1.0 - 2.0 / tau
+    case None      => 1.0
+  }
+
+  // LIF normalises the input by (1 - alpha) for a bounded steady state.
+  // I and LI leave the input unscaled (inputScale = 1).
+  val inputScale = if (isLIF) 1.0 - alpha else 1.0
+  val rFactor    = AF(inputScale, c.quants("v_mem").qformat)
+
+  val alphaFactor = Vec(AF(alpha, c.quants("v_mem").qformat), c.input.width)
+#+end_src
+
+** Step 2.3 -- =impl/Neuron.scala= : scale the input in =integrated=
+
+FIND the whole =integrated= block:
+
+#+begin_src scala
+  // Integrate: v[t] = alpha * v[t-1] + input[t]
+  val integrated = leaked.map { p =>
+    val leakedState = p._1
+    val input       = p._2
+
+    val integratedState = Vec(leakedState.zip(input.fragment.value).map { case (v, inp) =>
+      (v + inp)
+        .fixTo(c.quants("v_mem").qformat, RoundType.CEIL)
+    })
+
+    TupleBundle(integratedState, input)
+  }
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+  // Integrate: v[t] = alpha * v[t-1] + (1 - alpha) * input[t]
+  val integrated = leaked.map { p =>
+    val leakedState = p._1
+    val input       = p._2
+
+    val integratedState = Vec(leakedState.zip(input.fragment.value).map { case (v, inp) =>
+      (v + (rFactor * inp)
+        .fixTo(c.quants("v_mem").qformat, RoundType.CEIL))
+        .fixTo(c.quants("v_mem").qformat, RoundType.CEIL)
+    })
+
+    TupleBundle(integratedState, input)
+  }
+#+end_src
+
+For I and LI, =rFactor= is 1.0, so this is still just =v + input=.
+
+** Step 2.4 -- =impl/Neuron.scala= : the =afterFiring= stage
+
+This is the spike. FIND the tail of =integrated= and the =mem.write=
+that follows it:
+
+#+begin_src scala
+    TupleBundle(integratedState, input)
+  }
+
+  // Write updated membrane back
+  mem.write(
+    address = integrated.payload._2.fragment.flattenedAddress,
+    data = integrated.payload._1,
+    enable = integrated.fire
+  )
+#+end_src
+
+REPLACE with (insert =afterFiring=, and re-point =mem.write= at it):
+
+#+begin_src scala
+    TupleBundle(integratedState, input)
+  }
+
+  val afterFiring = (c.v_threshold, c.v_reset) match {
+    case (Some(vth), Some(vreset)) =>
+      integrated.map { p =>
+        val integratedState = p._1
+        val input           = p._2
+
+        val vthFactor = AF(vth, c.quants("v_mem").qformat)
+        val fired     = Vec(integratedState.map(_ >= vthFactor))
+
+        val nextState = Vec(integratedState.zip(fired).map { case (v, f) =>
+          Mux(f, AF(0.0, c.quants("v_mem").qformat), v)
+        })
+
+        TupleBundle(nextState, input, fired)
+      }
+    case _ =>
+      integrated.map(p => TupleBundle(p._1, p._2, Vec(Seq.fill(c.input.width)(False))))
+  }
+
+  // Write updated membrane back
+  mem.write(
+    address = afterFiring.payload._2.fragment.flattenedAddress,
+    data = afterFiring.payload._1,
+    enable = afterFiring.fire
+  )
+#+end_src
+
+=afterFiring= compares the membrane to =v_threshold=, resets fired
+neurons to 0, and carries a third tuple field -- the =fired= bit Vec --
+through to the output. When =v_threshold= / =v_reset= are absent (I and
+LI) the =case _= branch passes the membrane through with all-False
+spikes, so =afterFiring= is harmless for the non-spiking nodes.
+
+Note =mem.write= now stores =afterFiring= (the *reset* membrane), not
+the raw integrated value.
+
+** Step 2.5 -- =impl/Neuron.scala= : emit spikes on the output
+
+FIND the output stage:
+
+#+begin_src scala
+  // --- Drive output ---
+  integrated.translateInto(output) { case (out, from) =>
+    val state = from._1
+    val input = from._2
+    out.last            := input.last
+    out.fragment.coords := input.fragment.coords
+    out.fragment.value  := Vec(
+      state.map(_.fixTo(c.quants("output").qformat, RoundType.FLOOR))
+    )
+  }
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+  // --- Drive output ---
+  afterFiring.translateInto(output) { case (out, from) =>
+    val state  = from._1
+    val input  = from._2
+    val spikes = from._3
+    out.last            := input.last
+    out.fragment.coords := input.fragment.coords
+    out.fragment.value := Vec(
+      if (isLIF)
+        spikes.map(s => Mux(s, AF(1.0, c.quants("output").qformat), AF(0.0, c.quants("output").qformat)))
+      else
+        state.map(_.fixTo(c.quants("output").qformat, RoundType.FLOOR))
+    )
+  }
+#+end_src
+
+The output now reads =afterFiring= and unpacks the =spikes= field
+(=_3=). For a LIF node it emits 1/0 spikes; for I and LI (=isLIF= false)
+it still emits the membrane voltage.
+
+=Neuron.scala= is now complete -- one component that serves I, LI and
+LIF.
+
+** Step 2.6 -- create =types/lif.scala=
+
+CREATE =iscas26-tutorial/primitive_implementations/types/lif.scala=:
+
+#+begin_src scala
+package NIR2FPGA.Primitives
+
+import spinal.core._
+import spinal.lib._
+import nir._
+
+import NIR2FPGA.ConfigJSON
+import NIR2FPGA.Activations
+import NIR2FPGA.Primitives.Implementations.Neuron
+
+final case class LIFHW(
+  id: String,
+  params: LIFParams,
+  config: ConfigJSON
+) extends PrimitiveHW[LIFParams] {
+
+  /* alpha = 1 - 2/tau */
+  /* v[t] = alpha * v[t-1] + (1 - alpha) * input[t] */
+  /* spike when v[t] >= v_threshold, then reset the membrane to 0 */
+
+  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
+    // For now, assert that v_leak is zero
+    val vLeakValue = NodeHelper.extractScalar(params.v_leak)
+    require(vLeakValue == 0.0, s"LIFParams: v_leak must be zero for now, got ${vLeakValue}")
+
+    val lifconfig = Neuron.Config(
+      input = inputAct.c,
+      quants = config.quantizations(id),
+      tau = Some(NodeHelper.extractScalar(params.tau)),
+      v_reset = Some(NodeHelper.extractScalar(params.v_reset)),
+      v_threshold = Some(NodeHelper.extractScalar(params.v_threshold))
+    )
+
+    val neuron = Neuron(lifconfig).setName("lif")
+    (neuron.input, neuron.output)
+  }
+
+}
+#+end_src
+
+The LIF mapping is the LI mapping plus the two firing parameters --
+exactly the fields that flip =Neuron='s =isLIF= flag.
+
+** Step 2.7 -- =PrimitiveHW.scala= : dispatch =LIFParams=
+
+FIND the =params match= block:
+
+#+begin_src scala
+      case p: IParams      => IHW(id, p, config)
+      case p: LIParams     => LIHW(id, p, config)
+      case p: AffineParams => AffineHW(id, p, config)
+#+end_src
+
+REPLACE with:
+
+#+begin_src scala
+      case p: IParams      => IHW(id, p, config)
+      case p: LIParams     => LIHW(id, p, config)
+      case p: LIFParams    => LIFHW(id, p, config)
+      case p: AffineParams => AffineHW(id, p, config)
+#+end_src
+
+** Checkpoint -- Part 2
+
+#+begin_src bash
+cd 2-compilation
+sbt -DprimitivesDir=$(pwd)/../iscas26-tutorial/primitive_implementations compile
+#+end_src
+
+Then the real finish line -- the classifier notebook now has every
+primitive it needs:
+
+#+begin_src bash
+cd iscas26-tutorial/neuron
+jupytext --to notebook --execute 2-n2f.py
+#+end_src
+
+=2-n2f.py= should compile =Linear -> LIF=, simulate it, and report an
+accuracy matching the =solution= branch.
+
+* Recap
+
+| Step | File              | What you added                                   |
+|------+-------------------+--------------------------------------------------|
+| 1.1  | impl/Neuron.scala | =tau= Config field                               |
+| 1.2  | impl/Neuron.scala | =alpha=, =alphaFactor=, the =leaked= stage        |
+| 1.3  | impl/Neuron.scala | =integrated= now consumes =leaked=                |
+| 1.4  | types/li.scala    | LIParams -> Config mapping (new file)             |
+| 1.5  | PrimitiveHW.scala | =LIParams= dispatch case                          |
+| 2.1  | impl/Neuron.scala | =v_reset= / =v_threshold= Config fields           |
+| 2.2  | impl/Neuron.scala | =isLIF=, =inputScale=, =rFactor=                  |
+| 2.3  | impl/Neuron.scala | input scaled by =(1-alpha)= in =integrated=       |
+| 2.4  | impl/Neuron.scala | the =afterFiring= stage; =mem.write= reads it     |
+| 2.5  | impl/Neuron.scala | output emits spikes; reads =afterFiring=          |
+| 2.6  | types/lif.scala   | LIFParams -> Config mapping (new file)            |
+| 2.7  | PrimitiveHW.scala | =LIFParams= dispatch case                         |
+
+Adding a NIR primitive is always these three moves: a =types/= mapping,
+a =PrimitiveHW= dispatch case, and whatever hardware the =impl/=
+component needs.
