@@ -1,3 +1,46 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:52156141ac6142bbca63b26093a1345245551eeaf9a23413f18526a4ab9882dd
-size 1651
+{
+  "name": "NIR2FPGA — iscas26 Tutorial",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/nix:1": {
+      "multiUser": false,
+      "extraNixConfig": "experimental-features = nix-command flakes"
+    }
+  },
+  "mounts": [
+    "source=nir2fpga-devenv,target=${containerWorkspaceFolder}/.devenv,type=volume",
+    "source=nir2fpga-coursier,target=/home/vscode/.cache/coursier,type=volume",
+    "source=nir2fpga-sbt,target=/home/vscode/.sbt,type=volume",
+    "source=nir2fpga-ivy2,target=/home/vscode/.ivy2,type=volume",
+    "source=nir2fpga-pip,target=/home/vscode/.cache/pip,type=volume"
+  ],
+  "onCreateCommand": "bash .devcontainer/on-create.sh",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "forwardPorts": [8888],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.devenv/state/venv/bin/python",
+        "jupyter.notebookFileRoot": "${workspaceFolder}",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n",
+        "files.autoGuessEncoding": false
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-renderers",
+        "ms-toolsai.jupyter-keymap",
+        "mkhl.direnv",
+        "jnoortheen.nix-ide"
+      ],
+      "extensionsDisabled": [
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}
