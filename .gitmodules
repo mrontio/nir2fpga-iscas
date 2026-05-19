@@ -1,0 +1,3 @@
+[submodule "2-compilation/nir4s"]
+	path = 2-compilation/nir4s
+	url = https://github.com/mrontio/nir4s.git

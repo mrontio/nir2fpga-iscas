@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://devenv.sh/devenv.schema.json
+inputs:
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  git-hooks:
+    url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  nir-fork:
+    url: github:mrontio/NIR
+    flake: false
+
+nixpkgs:
+  config:
+    allowUnfree: true
+  per-platform:
+    x86_64-linux:
+      cudaSupport: true

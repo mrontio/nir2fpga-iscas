@@ -1,0 +1,35 @@
+# emacs
+*~
+
+\#*\## Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+.venv
+/train/cnn/data/
+/.bloop
+/.metals/
+/.pre-commit-config.yaml
+.vscode
+/SpinalHDL/HDL/
+/SpinalHDL/vivado_batch_work/
+/2-compilation/outputs/
+/1-internal-simulation/InternalSimulator/.mypy_cache/
+/1-internal-simulation/InternalSimulator/InternalSimulator.egg-info/
+/1-internal-simulation/notebooks/rec.png
+**__pycache__
+5-results/linear-scaling/outputs/**
+vivado*.jou
+vivado*.log
+5-results/utilisation-lut-only/outputs/**
+5-results/utilisation/outputs/**
+5-results/utilisation/.work/**
+5-results/utilisation/.work
+5-results/utilisation-lut-only/.work
+5-results/utilisation-lut-only/verilog
+/4-pynq-inference/debug.ipynb
+/4-pynq-inference/evaluate.ipynb
+iscas26-tutorial/neuron/outputs/*
+*.ipynb_checkpoints
