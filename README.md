@@ -1,7 +1,7 @@
 # Sindri: A Spiking Neural Network -> FPGA Compilation toolchain
 ![Toolchain diagram](img/toolchain.pdf)
 
-#Environment Setup 
+# Environment Setup 
 A VS Code Dev Container environment for the ISCAS26 Tutorial. You can run this on the cloud on Github Codespace.
 
 ---
