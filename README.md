@@ -24,14 +24,11 @@ After the container starts, open a terminal (**Terminal → New Terminal** or ``
 ```bash
 devenv shell
 ```
-Should take around 5 minutes or shorter depending on the build. Then to test running do the following.
+Should take around 10-15 minutes or shorter depending on the build. Then to test running do the following.
 
 ```bash
-python 1-internal-simulation/notebooks/1-1-lif.py
+python iscas26-tutorial/neuron/1-definition.ipynb
 ```
-
-An error around `unsqueeze` near line 99 means the imports and environment are working correctly — that notebook currently reaches a known model-shape issue, not an environment problem.
-
 ---
 
 ## Troubleshooting
@@ -46,7 +43,7 @@ If imports show missing packages after the container starts:
 
 ### Still broken after rebuild
 
-Try a clean rebuild: **Dev Containers: Rebuild Without Cache** from the Command Palette. This discards cached layers and re-downloads the base image.
+Try a clean rebuild: **Codespace: Rebuild Container** from the Command Palette.
 
 # Flow
 ## Stage 1: Internal Simulation
