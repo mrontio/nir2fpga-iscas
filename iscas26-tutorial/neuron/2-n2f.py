@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: venv (3.13.12)
+#     display_name: venv (3.11.15)
 #     language: python
 #     name: python3
 # ---
@@ -35,7 +35,7 @@ torch.manual_seed(42)
 output_dir = Path("./outputs")
 output_dir.mkdir(parents=True, exist_ok=True)
 
-primitives_dir = Path("iscas26/primitive_implementations").absolute()
+primitives_dir = Path("iscas26-tutorial/primitive_implementations").absolute()
 print(f"primitives_dir: {primitives_dir}")
 if not primitives_dir.exists():
     raise FileNotFoundError(f"primitives_dir does not exist: {primitives_dir}")
@@ -175,6 +175,20 @@ n2f.compile()
 # %%
 n2f.evaluate_characteristic(1, output_dir = output_dir / "characteristics")
 # %%
-nir_lif
-# %%
-nir_spyx_lif
+from PIL import Image
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 12))
+
+img0 = Image.open(output_dir / "characteristics" / "0_0.png")
+img1 = Image.open(output_dir / "characteristics" / "1_0.png")
+
+axes[0].imshow(img0)
+axes[0].set_title("Linear Characteristic")
+axes[0].axis('off')
+
+axes[1].imshow(img1)
+axes[1].set_title("LIF Characteristic")
+axes[1].axis('off')
+
+plt.tight_layout()
+plt.show()

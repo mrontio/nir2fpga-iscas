@@ -1,11 +1,12 @@
 # emacs
 *~
-
+n2f/
+outputs/
 \#*\## Devenv
 .devenv*
 devenv.local.nix
 
-# direnv
+# devenv cache
 .direnv
 .venv
 /train/cnn/data/
@@ -33,3 +34,4 @@ vivado*.log
 /4-pynq-inference/evaluate.ipynb
 iscas26-tutorial/neuron/outputs/*
 *.ipynb_checkpoints
+.devcontainer/post-create.sh

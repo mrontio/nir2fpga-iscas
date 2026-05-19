@@ -1,3 +1,5 @@
+* text=auto eol=lf
+
 *.json filter=lfs diff=lfs merge=lfs -text
 *.nir filter=lfs diff=lfs merge=lfs -text
 *.pth filter=lfs diff=lfs merge=lfs -text

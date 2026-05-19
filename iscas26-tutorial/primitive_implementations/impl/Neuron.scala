@@ -38,7 +38,7 @@ case class Neuron(c: Neuron.Config) extends Component {
   val isLIF = c.v_threshold.isDefined && c.v_reset.isDefined
 
   val alpha = c.tau match {
-    case Some(tau) => 1.0 - 1.0 / tau
+    case Some(tau) => 1.0 - 2.0 / tau
     case None      => 1.0
   }
 
