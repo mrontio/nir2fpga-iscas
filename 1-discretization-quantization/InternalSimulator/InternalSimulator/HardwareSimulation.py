@@ -287,20 +287,21 @@ class HardwareSimulation:
 
         self._vcd_hash = vcd_hash
         self._vcd_path = resolved
-        self._setvcd = setVCD.SetVCD(str(resolved), "AcceleratorAXI.clk")
+        setvcd = setVCD.SetVCD(str(resolved), "AcceleratorAXI.clk")
+        self._setvcd = setvcd
         print("[HardwareSimulation] VCD loaded.")
 
         if not actual_ignore:
             vcd_timestamp_signal = r"configTimestamp"
-            timestamp_signals = self._setvcd.search(vcd_timestamp_signal)
+            timestamp_signals = setvcd.search(vcd_timestamp_signal)
             if not timestamp_signals:
                 raise KeyError(
                     f"[HardwareSimulation] Timestamp signal '{vcd_timestamp_signal}' "
                     f"not found in {resolved}"
                 )
-            clock_sigs = self._setvcd.search("AcceleratorAXI.clk")
-            rising = self._setvcd.get(clock_sigs[0], lambda x, y: x == 0 and y == 1)
-            ts_values = self._setvcd.get_values(timestamp_signals[0], rising)
+            clock_sigs = setvcd.search("AcceleratorAXI.clk")
+            rising = setvcd.get(clock_sigs[0], lambda x, y: x == 0 and y == 1)
+            ts_values = setvcd.get_values(timestamp_signals[0], rising)
             if not ts_values:
                 raise KeyError(
                     f"[HardwareSimulation] No values found for timestamp signal '{vcd_timestamp_signal}'"

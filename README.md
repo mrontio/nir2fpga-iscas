@@ -21,11 +21,11 @@
 Use `spiker-mnist` as the canonical PTQ benchmark:
 
 ```bash
-devenv shell -- python 1-internal-simulation/scripts/benchmark_spiker_mnist.py --bits 8 --calibration-samples 1024
+devenv shell -- python 1-discretization-quantization/scripts/benchmark_spiker_mnist.py --bits 8 --calibration-samples 1024
 ```
 
 QAT setup / hardware-compatibility check:
 
 ```bash
-devenv shell -- python 1-internal-simulation/scripts/qat_spiker_mnist.py --epochs 1 --train-samples 256 --eval-samples 64 --calibration-samples 256 --bits 8
+devenv shell -- python 1-discretization-quantization/scripts/qat_spiker_mnist.py --epochs 1 --train-samples 256 --eval-samples 64 --calibration-samples 256 --bits 8
 ```

@@ -54,7 +54,7 @@ def main():
         return 2
 
     repo_root = Path(__file__).resolve().parents[2]
-    internal_sim_pkg = repo_root / "1-internal-simulation" / "InternalSimulator"
+    internal_sim_pkg = repo_root / "1-discretization-quantization" / "InternalSimulator"
     if not internal_sim_pkg.exists():
         print(f"ERROR: InternalSimulator package path not found: {internal_sim_pkg}", file=sys.stderr)
         return 2

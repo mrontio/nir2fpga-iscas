@@ -220,15 +220,15 @@ class AcceleratorAXITest extends AnyFunSuite with Matchers {
   }
 
   test("IF only") {
-    val nirFile    = "../1-internal-simulation/outputs/if/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/if/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/if/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/if/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runAcceleratorTest(nirFile, jsonFile)
   }
 
   test("IF with FIFO backpressure (size 128)") {
-    val nirFile    = "../1-internal-simulation/outputs/if/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/if/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/if/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/if/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runBackpressureTest(nirFile, jsonFile, fifoSize = 128, almostFullThreshold = 100)
   }
@@ -410,29 +410,29 @@ class AcceleratorAXITest extends AnyFunSuite with Matchers {
   }
 
   test("Linear -> IF") {
-    val nirFile    = "../1-internal-simulation/outputs/linear-if/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/linear-if/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/linear-if/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/linear-if/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runAcceleratorTest(nirFile, jsonFile)
   }
 
   test("Linear -> LIF") {
-    val nirFile    = "../1-internal-simulation/outputs/linear-lif/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/linear-lif/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/linear-lif/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/linear-lif/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runAcceleratorTest(nirFile, jsonFile)
   }
 
   test("Spiker MNIST") {
-    val nirFile    = "../1-internal-simulation/outputs/spiker-mnist/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/spiker-mnist/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/spiker-mnist/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/spiker-mnist/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runAcceleratorTest(nirFile, jsonFile)
   }
 
   test("Spiker SHD") {
-    val nirFile    = "../1-internal-simulation/outputs/spiker-shd/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/spiker-shd/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/spiker-shd/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/spiker-shd/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runAcceleratorTest(nirFile, jsonFile)
   }
@@ -535,8 +535,8 @@ class AcceleratorAXITest extends AnyFunSuite with Matchers {
   }
 
   test("Packet stream/model contract (lif_norse)") {
-    val nirFile    = "../1-internal-simulation/outputs/lif_norse/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/lif_norse/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/lif_norse/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/lif_norse/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runPacketContractTest(nirFile, jsonFile)
   }
@@ -777,28 +777,28 @@ class AcceleratorAXITest extends AnyFunSuite with Matchers {
 
   /**
    * Convenience wrapper: run an output-check test by model directory name.
-   * Constructs paths as ../1-internal-simulation/outputs/<modelName>/model.{nir,json}.
+   * Constructs paths as ../1-discretization-quantization/outputs/<modelName>/model.{nir,json}.
    */
   def runOutputCheckForModel(
     modelName: String,
     accelConfig: AcceleratorConfig = AcceleratorConfig.default
   ): Unit = {
-    val basePath = s"../1-internal-simulation/outputs/$modelName"
+    val basePath = s"../1-discretization-quantization/outputs/$modelName"
     val nirFile  = basePath + "/model.nir"
     val jsonFile = scala.io.Source.fromFile(basePath + "/model.json").mkString
     runOutputCheckTest(nirFile, jsonFile, accelConfig)
   }
 
   test("OutputCheck: Linear16 -> LIF8 -> Linear4") {
-    val nirFile    = "../1-internal-simulation/outputs/linear16-lif8-linear4/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/linear16-lif8-linear4/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/linear16-lif8-linear4/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/linear16-lif8-linear4/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runOutputCheckTest(nirFile, jsonFile)
   }
 
   test("OutputCheck: Linear -> LIF -> Linear") {
-    val nirFile    = "../1-internal-simulation/outputs/linear-lif-linear/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/linear-lif-linear/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/linear-lif-linear/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/linear-lif-linear/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runOutputCheckTest(nirFile, jsonFile)
   }
@@ -808,8 +808,8 @@ class AcceleratorAXITest extends AnyFunSuite with Matchers {
   }
 
   test("AXI-Lite counters track stream events") {
-    val nirFile    = "../1-internal-simulation/outputs/if/model.nir"
-    val jsonString = "../1-internal-simulation/outputs/if/model.json"
+    val nirFile    = "../1-discretization-quantization/outputs/if/model.nir"
+    val jsonString = "../1-discretization-quantization/outputs/if/model.json"
     val jsonFile   = scala.io.Source.fromFile(jsonString).mkString
     runAxiLiteCounterTrackingTest(nirFile, jsonFile)
   }

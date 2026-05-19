@@ -8,13 +8,10 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: venv (3.13.12)
 #     language: python
 #     name: python3
 # ---
-
-# %% [markdown]
-#
 
 # %% [markdown]
 # ## Imports & Paths
@@ -38,7 +35,10 @@ torch.manual_seed(42)
 output_dir = Path("./outputs")
 output_dir.mkdir(parents=True, exist_ok=True)
 
-primitives_dir = Path(os.environ["N2F_PRIMITIVES_DIR"])  # fail-fast: set N2F_PRIMITIVES_DIR to your primitive_implementations directory
+primitives_dir = Path("iscas26/primitive_implementations").absolute()
+print(f"primitives_dir: {primitives_dir}")
+if not primitives_dir.exists():
+    raise FileNotFoundError(f"primitives_dir does not exist: {primitives_dir}")
 
 
 # %% [markdown]

@@ -16,9 +16,9 @@ devenv.local.nix
 /SpinalHDL/HDL/
 /SpinalHDL/vivado_batch_work/
 /2-compilation/outputs/
-/1-internal-simulation/InternalSimulator/.mypy_cache/
-/1-internal-simulation/InternalSimulator/InternalSimulator.egg-info/
-/1-internal-simulation/notebooks/rec.png
+/1-discretization-quantization/InternalSimulator/.mypy_cache/
+/1-discretization-quantization/InternalSimulator/InternalSimulator.egg-info/
+/1-discretization-quantization/notebooks/rec.png
 **__pycache__
 5-results/linear-scaling/outputs/**
 vivado*.jou

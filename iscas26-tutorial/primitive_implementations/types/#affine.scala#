@@ -1,0 +1,26 @@
+package NIR2FPGA.Primitives
+
+import spinal.core._
+import spinal.lib._
+import nir._
+import nir.tensor.Tensor
+
+import NIR2FPGA.AcceleratorConfig
+import NIR2FPGA.ConfigJSON
+import NIR2FPGA.Activations
+import NIR2FPGA.Weights
+
+import NIR2FPGA.Downsizer
+import NIR2FPGA.Primitives.Implementations.{LinearAccumulate, LinearCompute}
+
+final case class AffineHW(
+  id: String,
+  params: AffineParams,
+  config: ConfigJSON,
+  accelConfig: AcceleratorConfig
+) extends PrimitiveHW[AffineParams] {
+
+  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
+    
+  }
+}
