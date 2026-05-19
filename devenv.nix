@@ -18,6 +18,10 @@ in
       pkgs.boost
       pkgs.glibc.dev
       pkgs.stdenv.cc.cc.lib
+      pkgs.libgcc.lib
+      pkgs.libGL
+      pkgs.hdf5
+      pkgs.zlib
     ];
     CPATH = lib.makeIncludePath [
       pkgs.boost
@@ -55,6 +59,7 @@ in
 
   languages.python = {
     enable = true;
+    package = pkgs.python311;
     venv = {
       enable = true;
       requirements = ''
@@ -81,7 +86,7 @@ in
         snntorch
         notebook
         ipywidgets
-        -e ${config.devenv.root}/1-internal-simulation/InternalSimulator
+        -e ${config.devenv.root}/1-discretization-quantization/InternalSimulator
       '';
     };
   };
