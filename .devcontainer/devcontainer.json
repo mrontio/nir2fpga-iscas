@@ -27,7 +27,11 @@
         "jupyter.notebookFileRoot": "${workspaceFolder}",
         "terminal.integrated.defaultProfile.linux": "bash",
         "files.eol": "\n",
-        "files.autoGuessEncoding": false
+        "files.autoGuessEncoding": false,
+        "autoOpen.files": [
+          "iscas26-tutorial/neuron/1-definition.ipynb",
+          "iscas26-tutorial/neuron/2-n2f.ipynb"
+        ]
       },
       "extensions": [
         "ms-python.python",
@@ -36,7 +40,8 @@
         "ms-toolsai.jupyter-renderers",
         "ms-toolsai.jupyter-keymap",
         "mkhl.direnv",
-        "jnoortheen.nix-ide"
+        "jnoortheen.nix-ide",
+        "simonw.auto-open"
       ],
       "extensionsDisabled": [
         "dbaeumer.vscode-eslint"
