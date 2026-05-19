@@ -14,19 +14,12 @@ final case class IHW(
   config: ConfigJSON
 ) extends PrimitiveHW[IParams] {
 
-  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
-    val dt           = 1.0 // Discrete timestep = 1 time unit
-    val maxTimesteps = config.timesteps + 1
+  /* v[t] = v[t-1] + input[t] */
 
+  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
     val iconfig = Neuron.Config(
       input = inputAct.c,
-      tau = None,
-      r = NodeHelper.extractScalar(params.r),
-      v_reset = None,
-      v_threshold = None,
-      dt = dt,
-      quants = config.quantizations(id),
-      timesteps = Some(config.timesteps)
+      quants = config.quantizations(id)
     )
 
     val neuron = Neuron(iconfig).setName("i")

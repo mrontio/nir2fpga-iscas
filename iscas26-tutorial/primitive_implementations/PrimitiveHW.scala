@@ -28,7 +28,6 @@ object PrimitiveHW {
     params match {
       case p: IParams      => IHW(id, p, config)
       case p: LIParams     => LIHW(id, p, config)
-      case p: LIFParams    => LIFHW(id, p, config)
       case p: AffineParams => AffineHW(id, p, config)
       case p: LinearParams =>
         val outSize = p.weight.shape.headOption.getOrElse(
