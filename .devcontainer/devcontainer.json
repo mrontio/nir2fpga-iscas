@@ -1,18 +1,38 @@
 {
-  "name": "NIR2FPGA — minimal",
-  "image": "nir2fpga:phase1",
-  "workspaceFolder": "/workspace",
+  "name": "NIR2FPGA - ISCAS26 Tutorial",
+  "image": "ghcr.io/tommyck003/nir_docker/nir_image:latest",
+  "mounts": [
+    "source=nir2fpga-devenv,target=${containerWorkspaceFolder}/.devenv,type=volume",
+    "source=nir2fpga-coursier,target=/home/vscode/.cache/coursier,type=volume",
+    "source=nir2fpga-sbt,target=/home/vscode/.sbt,type=volume",
+    "source=nir2fpga-ivy2,target=/home/vscode/.ivy2,type=volume",
+    "source=nir2fpga-pip,target=/home/vscode/.cache/pip,type=volume"
+  ],
+  "onCreateCommand": "bash .devcontainer/on-create.sh",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
   "forwardPorts": [8888],
   "customizations": {
     "vscode": {
       "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.devenv/state/venv/bin/python",
         "jupyter.notebookFileRoot": "${workspaceFolder}",
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n",
+        "files.autoGuessEncoding": false
       },
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter"
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-renderers",
+        "ms-toolsai.jupyter-keymap",
+        "mkhl.direnv",
+        "jnoortheen.nix-ide"
+        "simonw.auto-open"
+      ],
+      "extensionsDisabled": [
+        "dbaeumer.vscode-eslint"
       ]
     }
   }
