@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$WORKSPACE"
 
-git submodule update --init --recursive
-
-. "$HOME/.nix-profile/etc/profile.d/nix.sh"
-nix profile add --accept-flake-config github:cachix/devenv/latest
-nix profile add nixpkgs#direnv
-nix profile add nixpkgs#nix-direnv
+for tool in nix devenv direnv; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "ERROR: expected tool '$tool' not found on PATH in base image" >&2
+    exit 1
+  fi
+done
