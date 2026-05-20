@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
-WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$WORKSPACE"
 
-sed -i 's/\r$//' .envrc
+# Normalize CRLF -> LF on shell scripts and .envrc (defensive: Windows hosts / OneDrive / autocrlf)
+find "$SCRIPT_DIR" -maxdepth 1 -type f -name '*.sh' -exec sed -i 's/\r$//' {} +
+[ -f "$WORKSPACE/.envrc" ] && sed -i 's/\r$//' "$WORKSPACE/.envrc"
 
-sudo chown -R "$(id -u):$(id -g)" \
-  "$WORKSPACE/.devenv" \
-  "$HOME/.cache/coursier" \
-  "$HOME/.cache/pip" \
-  "$HOME/.sbt" \
-  "$HOME/.ivy2"
+sudo apt-get update
+sudo apt-get install -y git-lfs lesspipe
 
-# Build the devenv environment by allowing direnv to execute it
-. "$HOME/.nix-profile/etc/profile.d/nix.sh"
-direnv allow "$WORKSPACE"
-direnv exec "$WORKSPACE" true
+mkdir -p "$HOME/.config/direnv"
 
-PYTHONPATH_VALUE="$(devenv shell env | awk -F= '/^PYTHONPATH=/{print $2; exit}')"
-VENV_SITE_PACKAGES="$WORKSPACE/.devenv/state/venv/lib/python3.11/site-packages"
-mkdir -p "$VENV_SITE_PACKAGES"
-printf "import sys; sys.path.insert(0, '%s')\n" "${PYTHONPATH_VALUE%%:*}" > "$VENV_SITE_PACKAGES/nir-fork.pth"
+git lfs install
+git submodule update --init --recursive
+git lfs pull
+
+for path in "$WORKSPACE/.devenv" "$HOME/.cache" "$HOME/.sbt" "$HOME/.ivy2"; do
+  [ -e "$path" ] && sudo chown -R "$(id -u):$(id -g)" "$path"
+done
+
+source "$SCRIPT_DIR/_nix-daemon.sh"
+
+# Pre-build devenv environment so direnv can activate without timing out on first terminal open
+NIX_REMOTE=daemon devenv shell bash -c 'echo "devenv environment initialized"'
