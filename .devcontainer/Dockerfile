@@ -16,8 +16,6 @@ RUN mkdir -p /home/vscode/.config/nix && \
     > /home/vscode/.config/nix/nix.conf
 
 # Put the Nix profile bin on PATH for all subsequent RUN commands and the runtime
-# container. nix.sh in single-user/no-daemon mode delegates to the daemon profile
-# script which doesn't exist, so sourcing it is a no-op — ENV is the reliable fix.
 ENV PATH="/home/vscode/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
 
 # Install devenv, direnv, nix-direnv into the user Nix profile.
