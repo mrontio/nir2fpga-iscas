@@ -39,11 +39,22 @@ if [ ! -f "$HASH_FILE" ] || [ "$(cat "$HASH_FILE" 2>/dev/null)" != "$LOCK_HASH" 
   rm -rf "$WORKSPACE/.devenv/state/venv" "$WORKSPACE/.devenv/state/tasks.db"
 fi
 
-echo "Priming devenv shell and Python virtualenv..."
-if ! devenv shell -- true; then
-  echo "devenv shell failed — wiping state and retrying once"
-  rm -rf "$WORKSPACE/.devenv/state/venv" "$WORKSPACE/.devenv/state/tasks.db"
+VENV_ACTIVATE="$WORKSPACE/.devenv/state/venv/bin/activate"
+
+prime_devenv() {
+  # Evaluate the shell first so the cached environment is ready for direnv,
+  # then explicitly run the virtualenv task and verify it actually produced
+  # the venv (devenv shell exits 0 even if tasks are skipped/timed out).
   devenv shell -- true
+  devenv tasks run devenv:python:virtualenv
+  test -f "$VENV_ACTIVATE"
+}
+
+echo "Priming devenv shell and Python virtualenv..."
+if ! prime_devenv; then
+  echo "devenv prime failed — wiping state and retrying once"
+  rm -rf "$WORKSPACE/.devenv/state/venv" "$WORKSPACE/.devenv/state/tasks.db"
+  prime_devenv
 fi
 mkdir -p "$WORKSPACE/.devenv/state"
 echo "$LOCK_HASH" > "$HASH_FILE"
