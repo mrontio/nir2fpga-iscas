@@ -21,6 +21,8 @@ This repository has a **prebuild configuration** set up — the environment is b
 
 A VS Code editor opens in your browser — it will take the environment around 5-10 minutes to set up the required imports.
 
+> **Tip**: To view the creation log during the build, open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P` on Mac) and run **Codespaces: View Creation Log**.
+
 During the setup, you may see this screen in the terminal:
 
 ![Codespace setup complete screen](img/codespace-ready.png)
