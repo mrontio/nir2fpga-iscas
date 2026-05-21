@@ -21,11 +21,13 @@ This repository has a **prebuild configuration** set up — the environment is b
 
 A VS Code editor opens in your browser — it will take the environment around 5-10 minutes to set up the required imports.
 
+> **Tip**: To view the creation log during the build, open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P` on Mac) and run **Codespaces: View Creation Log**.
+
 During the setup, you may see this screen in the terminal:
 
 ![Codespace setup complete screen](img/codespace-ready.png)
 
-> **Do not press any key when you see this.** The `devenv shell` is still running in the background. If you accidentally pressed a key, just run `devenv shell` again in the new bash terminal and it will resume normally.
+**Do not press any key when you see this.** The `devenv shell` is still running in the background. If you accidentally pressed a key, just run `devenv shell` again in the new bash terminal and it will resume normally.
 
 To reopen a stopped codespace: **Code → Codespaces → your codespace name**(shown on the bottom left in the blue rectangle).
 
