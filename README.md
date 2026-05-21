@@ -14,6 +14,8 @@ A VS Code Dev Container environment for the ISCAS26 Tutorial. You can run this o
 
 To reopen a stopped codespace: **Code → Codespaces → your codespace name**.
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tommyck003/nir2fpga-iscas)
+
 > **Note:** GitHub Free accounts include 60 core-hours and 15 GB storage per month. A 2-core codespace uses 1 hour of quota per hour of runtime. You can get more quota with your education account.
 
 

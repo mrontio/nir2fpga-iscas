@@ -1,13 +1,15 @@
 { pkgs, lib, config, inputs, ... }:
 let
   torchVariant = "cpu"; #cu124;
-  nirFork = pkgs.python3.pkgs.buildPythonPackage {
+  python = pkgs.python311;
+  pythonPackages = python.pkgs;
+  nirFork = pythonPackages.buildPythonPackage {
     pname = "nir";
     version = "100.0.0";
     src = inputs.nir-fork;
     pyproject = true;
-    build-system = with pkgs.python3.pkgs; [ setuptools setuptools-scm ];
-    dependencies = with pkgs.python3.pkgs; [ numpy h5py ];
+    build-system = with pythonPackages; [ setuptools setuptools-scm ];
+    dependencies = with pythonPackages; [ numpy h5py ];
     doCheck = false;
     SETUPTOOLS_SCM_PRETEND_VERSION = "100.0.0";
   };
@@ -43,7 +45,6 @@ in
     pkgs.surfer
     pkgs.metals
     pkgs.scalafmt
-    pkgs.python3Packages.jupytext
     pkgs.hdf5
   ];
 
@@ -59,7 +60,7 @@ in
 
   languages.python = {
     enable = true;
-    package = pkgs.python311;
+    package = python;
     venv = {
       enable = true;
       requirements = ''
@@ -86,6 +87,7 @@ in
         snntorch
         notebook
         ipywidgets
+        jupytext==1.16.7
         -e ${config.devenv.root}/1-discretization-quantization/InternalSimulator
       '';
     };
@@ -112,7 +114,7 @@ in
   };
 
   enterShell = ''
-    export PYTHONPATH="${nirFork}/${pkgs.python3.sitePackages}:$PYTHONPATH"
+    export PYTHONPATH="${nirFork}/${python.sitePackages}:$PYTHONPATH"
     echo "Torch version: ${torchVariant} (change top of devenv.nix to change this)"
   '';
 

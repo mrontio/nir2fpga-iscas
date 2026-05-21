@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$WORKSPACE"
 
-for tool in nix devenv direnv; do
-  if ! command -v "$tool" >/dev/null 2>&1; then
-    echo "ERROR: expected tool '$tool' not found on PATH in base image" >&2
-    exit 1
-  fi
-done
+git submodule update --init --recursive
+
+# Nix, devenv, and direnv are pre-installed in the image — no downloads needed here.

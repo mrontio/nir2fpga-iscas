@@ -1,6 +1,11 @@
 {
-  "name": "NIR2FPGA - ISCAS26 Tutorial",
-  "image": "ghcr.io/tommyck003/nir_docker/nir_image:latest",
+  "name": "NIR2FPGA — iscas26 Tutorial",
+  "image": "ghcr.io/tommyck003/nir2fpga-iscas:latest",
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
   "mounts": [
     "source=nir2fpga-devenv,target=${containerWorkspaceFolder}/.devenv,type=volume",
     "source=nir2fpga-coursier,target=/home/vscode/.cache/coursier,type=volume",
@@ -19,7 +24,11 @@
         "jupyter.notebookFileRoot": "${workspaceFolder}",
         "terminal.integrated.defaultProfile.linux": "bash",
         "files.eol": "\n",
-        "files.autoGuessEncoding": false
+        "files.autoGuessEncoding": false,
+        "autoOpen.files": [
+          "iscas26-tutorial/neuron/1-definition.ipynb",
+          "iscas26-tutorial/neuron/2-n2f.ipynb"
+        ]
       },
       "extensions": [
         "ms-python.python",
@@ -28,7 +37,7 @@
         "ms-toolsai.jupyter-renderers",
         "ms-toolsai.jupyter-keymap",
         "mkhl.direnv",
-        "jnoortheen.nix-ide"
+        "jnoortheen.nix-ide",
         "simonw.auto-open"
       ],
       "extensionsDisabled": [
