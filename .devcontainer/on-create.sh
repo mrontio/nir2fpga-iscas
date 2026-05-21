@@ -5,7 +5,4 @@ cd "$WORKSPACE"
 
 git submodule update --init --recursive
 
-. "$HOME/.nix-profile/etc/profile.d/nix.sh"
-nix profile add --accept-flake-config github:cachix/devenv/latest
-nix profile add nixpkgs#direnv
-nix profile add nixpkgs#nix-direnv
+# Nix, devenv, and direnv are pre-installed in the image — no downloads needed here.

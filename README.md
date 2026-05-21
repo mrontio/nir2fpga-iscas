@@ -2,20 +2,35 @@
 ![Toolchain diagram](img/toolchain.pdf)
 
 # Environment Setup 
-A VS Code Dev Container environment for the ISCAS26 Tutorial. You can run this on the cloud on Github Codespace.
+A VS Code Dev Container environment for the ISCAS26 Tutorial. You can run this on the cloud on Github Codespace or locally
 
 ---
 
 ## GitHub Codespaces (no local installation required)
 
-1. On this repository page, click **Code (Green button) → Codespaces → Create codespace on main**
-2. Wait for the container to build (~10-15 min first time — Nix packages are fetched and the Python venv is created)
-3. A VS Code editor opens in your browser — the environment is ready
+This repository has a **prebuild configuration** set up — the environment is built in the background ahead of time so you can start coding immediately without waiting for packages to install.
 
-To reopen a stopped codespace: **Code → Codespaces → your codespace name**.
+> **Important:** 
+>To benefit from the prebuild, open the Codespace directly from this repository (not a fork).
+>Launch with a 4-core machine
 
-> **Note:** GitHub Free accounts include 60 core-hours and 15 GB storage per month. A 2-core codespace uses 1 hour of quota per hour of runtime. You can get more quota with your education account.
+1. Click **Code (Green button) → Codespaces** on this public repo
+2. Click the **three dots (···)** and select **New with options...**
+3. Under **Machine type**, select **4-core**
+4. Click **Create codespace**
 
+A VS Code editor opens in your browser — it will take the environment around 5-10 minutes to set up the required imports.
+
+During the setup, you may see this screen in the terminal:
+
+![Codespace setup complete screen](img/codespace-ready.png)
+
+> **Do not press any key when you see this.** The `devenv shell` is still running in the background. If you accidentally pressed a key, just run `devenv shell` again in the new bash terminal and it will resume normally.
+
+To reopen a stopped codespace: **Code → Codespaces → your codespace name**(shown on the bottom left in the blue rectangle).
+
+
+> **Note:** GitHub Free accounts include 60 core-hours and 15 GB storage per month. A 4-core codespace uses 2 hours of quota per hour of runtime. You can get more quota with your education account.
 
 ## Verifying the environment
 
@@ -24,10 +39,10 @@ After the container starts, open a terminal (**Terminal → New Terminal** or ``
 ```bash
 devenv shell
 ```
-Should take around 10-15 minutes or shorter depending on the build. Then to test running do the following.
+Should take around 2 minutes or shorter depending on the build. Then to test running do the following.
 
 ```bash
-python iscas26-tutorial/neuron/1-definition.ipynb
+python iscas26-tutorial/neuron/1-definition.py
 ```
 ---
 
@@ -41,7 +56,7 @@ If imports show missing packages after the container starts:
 2. Run **Python: Select Interpreter**
 3. Choose `.devenv/state/venv/bin/python`
 
-### Still broken after rebuild
+### Environment still broken after rebuild
 
 Try a clean rebuild: **Codespace: Rebuild Container** from the Command Palette.
 
