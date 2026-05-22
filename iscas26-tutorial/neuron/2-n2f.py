@@ -8,15 +8,17 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: venv (3.11.15)
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
 # %% [markdown]
+#
+
+# %% [markdown]
 # ## Imports & Paths
 # %%
-import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -35,20 +37,19 @@ torch.manual_seed(42)
 output_dir = Path("./outputs")
 output_dir.mkdir(parents=True, exist_ok=True)
 
-primitives_dir = Path("iscas26-tutorial/primitive_implementations").absolute()
-print(f"primitives_dir: {primitives_dir}")
-if not primitives_dir.exists():
-    raise FileNotFoundError(f"primitives_dir does not exist: {primitives_dir}")
-
 
 # %% [markdown]
 # # 1. Load saved files
 # %%
-_data       = np.load(str(output_dir / "spyx" / "dataset.npz"))
+_data       = np.load(str(output_dir / "jaxsnn" / "dataset.npz"))
 dataset     = torch.from_numpy(_data["inputs"])   # (10, 200, 1)
 labels      = torch.from_numpy(_data["labels"]).long()
 print(f"Dataset inputs : {dataset.shape}, {dataset.dtype}")
 print(f"Dataset labels : {labels.shape}, {labels.dtype}")
+
+# jaxsnn source recordings + the sample index they were recorded on (notebook 1).
+_src         = np.load(str(output_dir / "jaxsnn" / "source_recordings.npz"))
+sample_index = int(_src["sample_index"])
 
 
 # %%
@@ -120,10 +121,9 @@ nir_affine_lif = nir.NIRGraph(
 )
 
 # %%
-nir_spyx_li  = nir.read(str(output_dir  / "spyx" / "li.nir"))
-nir_spyx_lif  = nir.read(str(output_dir  / "spyx" / "lif.nir"))
-nir_spyx_classifier = nir.read(str(output_dir  / "spyx" / "classifier.nir"))
-#norse_recordings = torch.load(str(output_dir / "lif_rec.npz"), weights_only=True)
+nir_jaxsnn_li  = nir.read(str(output_dir  / "jaxsnn" / "li.nir"))
+nir_jaxsnn_lif  = nir.read(str(output_dir  / "jaxsnn" / "lif.nir"))
+nir_jaxsnn_classifier = nir.read(str(output_dir  / "jaxsnn" / "classifier.nir"))
 # %%
 dc_dataset = TensorDataset(dataset, labels)
 
@@ -133,22 +133,21 @@ dc = DiscretizationChoices(
     batch_size=dataset.shape[0], # 10
     total_bits=16,
     macWidth=4,
-    representative_sample_index=42,
+    representative_sample_index=sample_index,
     ptq=PTQOptions(method="minmax"),
 )
 
 # %% [markdown]
 # # NIR2FPGA
 # %%
-n2f = NIR2FPGA("n2f", nir_spyx_classifier, dc,
-                     simulation_options=SimulationOptions(
-                         primitives_dir=str(primitives_dir)
-                     ))
+# SimulationOptions() with no primitives_dir uses the in-repo primitive
+# implementations at 2-compilation/hw/spinal/NIR2FPGA/src/primitives.
+n2f = NIR2FPGA("n2f", nir_jaxsnn_classifier, dc,
+                     simulation_options=SimulationOptions())
 n2f.report_quantization()
 n2f.save_files()
 # %%
-# Register Spyx source recordings. Layer IDs "0"/"1" match the normalized NIR chain order.
-_src = np.load(str(output_dir / "spyx" / "source_recordings.npz"))
+# Register jaxsnn source recordings. Layer IDs "0"/"1" match the normalized NIR chain order.
 n2f.add_recording("source", {
     "0": {
         "input":  torch.from_numpy(_src["linear_input"]).float(),
@@ -173,22 +172,8 @@ n2f.evaluate_accuracy(spike_count_pred)
 # n2f.simulate(6)
 n2f.compile()
 # %%
-n2f.evaluate_characteristic(1, output_dir = output_dir / "characteristics")
+n2f.evaluate_characteristic(sample_index, output_dir = output_dir / "characteristics")
 # %%
-from PIL import Image
-
-fig, axes = plt.subplots(2, 1, figsize=(10, 12))
-
-img0 = Image.open(output_dir / "characteristics" / "0_0.png")
-img1 = Image.open(output_dir / "characteristics" / "1_0.png")
-
-axes[0].imshow(img0)
-axes[0].set_title("Linear Characteristic")
-axes[0].axis('off')
-
-axes[1].imshow(img1)
-axes[1].set_title("LIF Characteristic")
-axes[1].axis('off')
-
-plt.tight_layout()
-plt.show()
+nir_lif
+# %%
+nir_jaxsnn_lif

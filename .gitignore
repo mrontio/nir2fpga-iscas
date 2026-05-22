@@ -1,12 +1,11 @@
 # emacs
 *~
-n2f/
-outputs/
+
 \#*\## Devenv
 .devenv*
 devenv.local.nix
 
-# devenv cache
+# direnv
 .direnv
 .venv
 /train/cnn/data/
@@ -17,9 +16,9 @@ devenv.local.nix
 /SpinalHDL/HDL/
 /SpinalHDL/vivado_batch_work/
 /2-compilation/outputs/
-/1-discretization-quantization/InternalSimulator/.mypy_cache/
-/1-discretization-quantization/InternalSimulator/InternalSimulator.egg-info/
-/1-discretization-quantization/notebooks/rec.png
+/1-internal-simulation/InternalSimulator/.mypy_cache/
+/1-internal-simulation/InternalSimulator/InternalSimulator.egg-info/
+/1-internal-simulation/notebooks/rec.png
 **__pycache__
 5-results/linear-scaling/outputs/**
 vivado*.jou
@@ -32,6 +31,5 @@ vivado*.log
 5-results/utilisation-lut-only/verilog
 /4-pynq-inference/debug.ipynb
 /4-pynq-inference/evaluate.ipynb
-iscas26-tutorial/neuron/outputs/*
+iscas26-tutorial/*/outputs/
 *.ipynb_checkpoints
-.devcontainer/post-create.sh

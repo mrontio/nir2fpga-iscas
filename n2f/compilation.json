@@ -1,0 +1,6 @@
+{
+  "dataset_name": "skip",
+  "macWidth": 4,
+  "reduction": false,
+  "spikeGating": true
+}
