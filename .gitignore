@@ -32,6 +32,5 @@ vivado*.log
 5-results/utilisation-lut-only/verilog
 /4-pynq-inference/debug.ipynb
 /4-pynq-inference/evaluate.ipynb
-iscas26-tutorial/neuron/outputs/*
+iscas26-tutorial/*/outputs/
 *.ipynb_checkpoints
-.devcontainer/post-create.sh
