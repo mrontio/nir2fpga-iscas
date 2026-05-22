@@ -45,6 +45,7 @@ in
     pkgs.surfer
     pkgs.metals
     pkgs.scalafmt
+    pkgs.python3Packages.jupytext
     pkgs.hdf5
   ];
 
@@ -87,7 +88,6 @@ in
         snntorch
         notebook
         ipywidgets
-        jupytext==1.16.7
         -e ${config.devenv.root}/1-discretization-quantization/InternalSimulator
       '';
     };
