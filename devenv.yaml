@@ -10,6 +10,9 @@ inputs:
   nir-fork:
     url: github:mrontio/NIR
     flake: false
+  jaxsnn:
+    url: github:jegp/jaxsnn
+    flake: false
 
 nixpkgs:
   config:

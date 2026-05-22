@@ -13,6 +13,16 @@ let
     doCheck = false;
     SETUPTOOLS_SCM_PRETEND_VERSION = "100.0.0";
   };
+  jaxsnnPkg = pythonPackages.buildPythonPackage {
+    pname = "jaxsnn";
+    version = "0.2.1";
+    src = inputs.jaxsnn;
+    pyproject = true;
+    build-system = with pythonPackages; [ setuptools setuptools-scm ];
+    dependencies = with pythonPackages; [ scipy optax matplotlib ];
+    doCheck = false;
+    SETUPTOOLS_SCM_PRETEND_VERSION = "0.2.1";
+  };
 in
 {
   env = {
@@ -84,7 +94,6 @@ in
         jaxlib
         dm-haiku
         optax
-        spyx
         snntorch
         notebook
         ipywidgets
@@ -114,7 +123,7 @@ in
   };
 
   enterShell = ''
-    export PYTHONPATH="${nirFork}/${python.sitePackages}:$PYTHONPATH"
+    export PYTHONPATH="${nirFork}/${python.sitePackages}:${jaxsnnPkg}/${python.sitePackages}:$PYTHONPATH"
     echo "Torch version: ${torchVariant} (change top of devenv.nix to change this)"
   '';
 
