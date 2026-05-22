@@ -19,7 +19,6 @@ let
     src = inputs.jaxsnn;
     pyproject = true;
     build-system = with pythonPackages; [ setuptools setuptools-scm ];
-    dependencies = with pythonPackages; [ scipy optax matplotlib ];
     doCheck = false;
     SETUPTOOLS_SCM_PRETEND_VERSION = "0.2.1";
   };
