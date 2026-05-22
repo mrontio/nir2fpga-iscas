@@ -307,6 +307,11 @@ class HardwareSimulation:
                     f"[HardwareSimulation] No values found for timestamp signal '{vcd_timestamp_signal}'"
                 )
             timestamp = ts_values[0]
+            if not isinstance(timestamp, int):
+                raise TypeError(
+                    f"[HardwareSimulation] Expected an integer value for timestamp "
+                    f"signal '{vcd_timestamp_signal}', got {timestamp!r}"
+                )
             if timestamp != self.n2f.timestamp:
                 theirs = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                 ours = datetime.fromtimestamp(self.n2f.timestamp, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
