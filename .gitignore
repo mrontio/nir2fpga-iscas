@@ -36,6 +36,5 @@ vivado*.log
 /4-pynq-inference/evaluate.ipynb
 iscas26-tutorial/*/outputs/
 # jupytext .py files are the single source of truth for tutorial notebooks
-iscas26-tutorial/**/*.ipynb
 *.ipynb_checkpoints
 .devcontainer/post-create.sh
