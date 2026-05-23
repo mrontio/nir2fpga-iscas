@@ -27,7 +27,6 @@ object PrimitiveHW {
   def create(id: String, params: NIRParams, config: ConfigJSON, accelConfig: AcceleratorConfig): PrimitiveHW[_] =
     params match {
       case p: IParams      => IHW(id, p, config)
-      case p: LIParams     => LIHW(id, p, config)
       case p: AffineParams => AffineHW(id, p, config)
       case p: LinearParams =>
         val outSize = p.weight.shape.headOption.getOrElse(

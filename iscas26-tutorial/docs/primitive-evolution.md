@@ -60,33 +60,7 @@ v[t] = alpha * v[t-1] + input[t]
 discrete approximation `alpha = 1 - 2/tau`. With `tau = None` we keep
 `alpha = 1`, i.e. no leak -- so the same code still serves the I node.
 
-## Step 1.1 -- `impl/Neuron.scala` : add `tau` to the Config
-
-The Config is how a `types/` mapping hands parameters to the datapath.
-Add an optional `tau`.
-
-FIND the `Config` at the bottom of the file:
-
-```scala
-case class Config(
-    input: Activations.Config,
-    quants: Map[String, QuantizationConfig]
-  )
-```
-
-REPLACE with:
-
-```scala
-  case class Config(
-    input: Activations.Config,
-    quants: Map[String, QuantizationConfig],
-    tau: Option[Double] = None
-  )
-```
-
-The default `None` means `types/i.scala` keeps compiling untouched.
-
-## Step 1.2 -- `impl/Neuron.scala` : add the leak stage
+## Step 1.1 -- `impl/Neuron.scala` : add the leak stage
 
 FIND the end of the `memReadWithPayload` block and the `// Integrate`
 comment that follows it:
@@ -141,7 +115,7 @@ REPLACE with (i.e. insert the leak stage between them):
 it by `alpha`. It carries the input payload through untouched (the
 `TupleBundle`) so the next stage can still see it.
 
-## Step 1.3 -- `impl/Neuron.scala` : feed `integrated` from `leaked`
+## Step 1.2 -- `impl/Neuron.scala` : feed `integrated` from `leaked`
 
 `integrated` currently reads `memReadWithPayload` directly. Re-point it
 at the new `leaked` stage. (The tuple field names change: `leaked`
@@ -169,51 +143,6 @@ REPLACE with:
 
 Nothing after `integrated` changes: `mem.write` and the output stage
 still read `integrated`.
-
-## Step 1.4 -- create `types/li.scala`
-
-This maps an `LIParams` NIR node onto `Neuron.Config`. It is the LI twin
-of `types/i.scala`; the only new line is `tau`.
-
-CREATE `iscas26-tutorial/primitive_implementations/types/li.scala`:
-
-```scala
-package NIR2FPGA.Primitives
-
-import spinal.core._
-import spinal.lib._
-import nir._
-
-import NIR2FPGA.ConfigJSON
-import NIR2FPGA.Activations
-import NIR2FPGA.Primitives.Implementations.Neuron
-
-final case class LIHW(
-  id: String,
-  params: LIParams,
-  config: ConfigJSON
-) extends PrimitiveHW[LIParams] {
-
-  /* alpha = 1 - 2/tau */
-  /* v[t] = alpha * v[t-1] + input[t] */
-
-  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
-    // For now, assert that v_leak is zero
-    val vLeakValue = NodeHelper.extractScalar(params.v_leak)
-    require(vLeakValue == 0.0, s"LIParams: v_leak must be zero for now, got ${vLeakValue}")
-
-    val liconfig = Neuron.Config(
-      input = inputAct.c,
-      quants = config.quantizations(id),
-      tau = Some(NodeHelper.extractScalar(params.tau))
-    )
-
-    val neuron = Neuron(liconfig).setName("li")
-    (neuron.input, neuron.output)
-  }
-
-}
-```
 
 ## Step 1.5 -- `PrimitiveHW.scala` : dispatch `LIParams`
 
@@ -262,34 +191,6 @@ v[t] = alpha * v[t-1] + (1 - alpha) * input[t]
 ```
 
 We add one more datapath stage, `afterFiring`, after `integrated`.
-
-## Step 2.1 -- `impl/Neuron.scala` : add `v_reset` / `v_threshold` to the Config
-
-FIND the `Config`:
-
-```scala
-  case class Config(
-    input: Activations.Config,
-    quants: Map[String, QuantizationConfig],
-    tau: Option[Double] = None
-  )
-```
-
-REPLACE with:
-
-```scala
-  case class Config(
-    input: Activations.Config,
-    quants: Map[String, QuantizationConfig],
-    tau: Option[Double] = None,
-    v_reset: Option[Double] = None,
-    v_threshold: Option[Double] = None
-  )
-```
-
-Both default to `None`, so `types/i.scala` and `types/li.scala` keep
-compiling: the presence of these fields is exactly what tells `Neuron`
-to behave as LIF.
 
 ## Step 2.2 -- `impl/Neuron.scala` : the `isLIF` flag and input scaling
 
@@ -477,54 +378,6 @@ it still emits the membrane voltage.
 `Neuron.scala` is now complete -- one component that serves I, LI and
 LIF.
 
-## Step 2.6 -- create `types/lif.scala`
-
-CREATE `iscas26-tutorial/primitive_implementations/types/lif.scala`:
-
-```scala
-package NIR2FPGA.Primitives
-
-import spinal.core._
-import spinal.lib._
-import nir._
-
-import NIR2FPGA.ConfigJSON
-import NIR2FPGA.Activations
-import NIR2FPGA.Primitives.Implementations.Neuron
-
-final case class LIFHW(
-  id: String,
-  params: LIFParams,
-  config: ConfigJSON
-) extends PrimitiveHW[LIFParams] {
-
-  /* alpha = 1 - 2/tau */
-  /* v[t] = alpha * v[t-1] + (1 - alpha) * input[t] */
-  /* spike when v[t] >= v_threshold, then reset the membrane to 0 */
-
-  def makeHardware(inputAct: Activations): (Stream[Fragment[Activations]], Stream[Fragment[Activations]]) = {
-    // For now, assert that v_leak is zero
-    val vLeakValue = NodeHelper.extractScalar(params.v_leak)
-    require(vLeakValue == 0.0, s"LIFParams: v_leak must be zero for now, got ${vLeakValue}")
-
-    val lifconfig = Neuron.Config(
-      input = inputAct.c,
-      quants = config.quantizations(id),
-      tau = Some(NodeHelper.extractScalar(params.tau)),
-      v_reset = Some(NodeHelper.extractScalar(params.v_reset)),
-      v_threshold = Some(NodeHelper.extractScalar(params.v_threshold))
-    )
-
-    val neuron = Neuron(lifconfig).setName("lif")
-    (neuron.input, neuron.output)
-  }
-
-}
-```
-
-The LIF mapping is the LI mapping plus the two firing parameters --
-exactly the fields that flip `Neuron`'s `isLIF` flag.
-
 ## Step 2.7 -- `PrimitiveHW.scala` : dispatch `LIFParams`
 
 FIND the `params match` block:
@@ -566,17 +419,13 @@ accuracy matching the `solution` branch.
 
 | Step | File              | What you added                                   |
 |------|-------------------|--------------------------------------------------|
-| 1.1  | impl/Neuron.scala | `tau` Config field                               |
-| 1.2  | impl/Neuron.scala | `alpha`, `alphaFactor`, the `leaked` stage        |
-| 1.3  | impl/Neuron.scala | `integrated` now consumes `leaked`                |
-| 1.4  | types/li.scala    | LIParams -> Config mapping (new file)             |
+| 1.1  | impl/Neuron.scala | `alpha`, `alphaFactor`, the `leaked` stage        |
+| 1.2  | impl/Neuron.scala | `integrated` now consumes `leaked`                |
 | 1.5  | PrimitiveHW.scala | `LIParams` dispatch case                          |
-| 2.1  | impl/Neuron.scala | `v_reset` / `v_threshold` Config fields           |
 | 2.2  | impl/Neuron.scala | `isLIF`, `inputScale`, `rFactor`                  |
 | 2.3  | impl/Neuron.scala | input scaled by `(1-alpha)` in `integrated`       |
 | 2.4  | impl/Neuron.scala | the `afterFiring` stage; `mem.write` reads it     |
 | 2.5  | impl/Neuron.scala | output emits spikes; reads `afterFiring`          |
-| 2.6  | types/lif.scala   | LIFParams -> Config mapping (new file)            |
 | 2.7  | PrimitiveHW.scala | `LIFParams` dispatch case                         |
 
 Adding a NIR primitive is always these three moves: a `types/` mapping,

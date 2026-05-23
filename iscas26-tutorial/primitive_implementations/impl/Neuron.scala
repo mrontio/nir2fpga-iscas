@@ -35,38 +35,12 @@ case class Neuron(c: Neuron.Config) extends Component {
     input.payload
   )
 
-  // Leak factor: alpha = 1 - 2/tau. With tau = None, alpha = 1 (no leak),
-  // which makes this neuron behave as a plain integrator (I).
-  val alpha = c.tau match {
-    case Some(tau) => 1.0 - 2.0 / tau
-    case None      => 1.0
-  }
-
-  val alphaFactor = Vec(AF(alpha, c.quants("v_mem").qformat), c.input.width)
-
-  // Leak: alpha * v[t-1]
-  val leaked = memReadWithPayload.map { p =>
+  // Integrate: v[t] = v[t-1] + input[t]
+  val integrated = memReadWithPayload.map { p =>
     val state = p.value
     val input = p.linked
 
-    val leakedState = Vec(
-      state
-        .zip(alphaFactor)
-        .map { case (v, alpha) =>
-          (alpha * v)
-            .fixTo(c.quants("v_mem").qformat, RoundType.CEIL)
-        }
-    )
-
-    TupleBundle(leakedState, input)
-  }
-
-  // Integrate: v[t] = alpha * v[t-1] + input[t]
-  val integrated = leaked.map { p =>
-    val leakedState = p._1
-    val input       = p._2
-
-    val integratedState = Vec(leakedState.zip(input.fragment.value).map { case (v, inp) =>
+    val integratedState = Vec(state.zip(input.fragment.value).map { case (v, inp) =>
       (v + inp)
         .fixTo(c.quants("v_mem").qformat, RoundType.CEIL)
     })
@@ -98,7 +72,9 @@ object Neuron {
   case class Config(
     input: Activations.Config,
     quants: Map[String, QuantizationConfig],
-    tau: Option[Double] = None
+    tau: Option[Double] = None,
+    v_reset: Option[Double] = None,
+    v_threshold: Option[Double] = None
   )
 
 }
