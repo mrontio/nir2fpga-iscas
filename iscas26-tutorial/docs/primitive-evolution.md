@@ -1,8 +1,5 @@
-#+TITLE: NIR Primitive Evolution: I -> LI -> LIF
-#+SUBTITLE: ISCAS26 Tutorial -- Hands-on NIR Primitive Development
-#+OPTIONS: toc:2 num:t
-
-* What this is
+# Developing the NIR LIF primitive, starting from the I.
+# What this is
 
 A live-coding script for growing one hardware neuron primitive through
 three NIR node types, in increasing order of biological detail:
@@ -18,20 +15,9 @@ is *not* the neuron maths -- it is to see how a NIR node type is wired
 into NIR2FPGA: a parameter mapping (=types/=), a dispatch entry
 (=PrimitiveHW.scala=), and a hardware implementation (=impl/=).
 
-** Branches
+# The codebase: three files per primitive
 
-| Branch     | Primitives installed      | Audience                             |
-|------------+---------------------------+--------------------------------------|
-| =demo=     | Linear, I                 | Presenter -- live-codes Part 1 + 2   |
-| =main=     | Linear, I, LI             | Attendees -- the leak is done; do LIF (Part 2) |
-| =solution= | Linear, I, LI, LIF        | Reference / answer key               |
-
-Presenter: start on =demo=, follow Part 1 then Part 2.
-Attendees:  start on =main=, follow Part 2 only.
-
-* The codebase: three files per primitive
-
-#+begin_example
+```
 iscas26-tutorial/primitive_implementations/
   PrimitiveHW.scala     <- dispatch: NIR params -> *HW builder
   types/i.scala         <- IParams   -> Neuron.Config   (parameter mapping)
@@ -39,19 +25,18 @@ iscas26-tutorial/primitive_implementations/
   types/lif.scala       <- LIFParams -> Neuron.Config
   impl/Neuron.scala     <- the actual hardware (a streaming datapath)
   impl/Affine.scala     <- the Linear/Affine layer (unchanged here)
-#+end_example
-
+```
 The dataflow when NIR2FPGA compiles a graph:
 
-#+begin_example
-  NIR node (e.g. nir.LIF)
+```
+NIR node (e.g. nir.LIF)
     -> PrimitiveHW.create  matches the *Params type
     -> LIFHW.makeHardware   maps NIR params into a Neuron.Config
     -> Neuron(config)       elaborates the SpinalHDL datapath
-#+end_example
+```
 
-=Neuron.scala= is *one unified component*. Its behaviour is selected by
-which =Config= fields are populated:
+`Neuron.scala` is *one unified component*. Its behaviour is selected by
+which `Config` fields are populated:
 
 | Config has...                   | Behaves as |
 |----------------------------------+------------|
@@ -59,73 +44,33 @@ which =Config= fields are populated:
 | tau                              | LI         |
 | tau + v_reset + v_threshold      | LIF        |
 
-So "adding LIF" means: (a) teach =Neuron= the extra datapath stages, and
-(b) add the =types/= mapping + =PrimitiveHW= dispatch that feed it.
+# PART 1 -- I -> LI : add the leak
 
-* The Neuron datapath
-
-=Neuron= is a streaming pipeline. One input fragment = one neuron's
-input current for one timestep. Membrane voltages live in =mem= (one
-word per neuron). Each stage is a =Stream.map= that reads the previous
-stage:
-
-#+begin_example
-  I  :  memReadWithPayload --> integrated --------------------> output
-  LI :  memReadWithPayload --> leaked --> integrated ---------> output
-  LIF:  memReadWithPayload --> leaked --> integrated --> afterFiring --> output
-#+end_example
-
-Each step below adds a stage and re-points the stages that follow it.
-
-* How to test
-
-The notebook =iscas26-tutorial/neuron/2-n2f.py= compiles a trained
-classifier (=Linear -> LIF=) and simulates it. It therefore *only runs
-once LIF exists* -- it is the finish line for Part 2.
-
-#+begin_src bash
-# from the repo root, inside the devenv shell
-cd iscas26-tutorial/neuron
-jupytext --to notebook --execute 2-n2f.py     # or run 2-n2f.ipynb
-#+end_src
-
-A faster check after each step is to compile the primitives directly:
-
-#+begin_src bash
-cd 2-compilation
-sbt -DprimitivesDir=$(pwd)/../iscas26-tutorial/primitive_implementations compile
-#+end_src
-
-* PART 1 -- I -> LI : add the leak
-:PROPERTIES:
-:AUDIENCE: presenter (demo branch)
-:END:
-
-** Concept
+## Concept
 
 A plain integrator never forgets: every input current is added to the
 membrane forever. A *leaky* integrator multiplies the membrane by a
-decay factor =alpha= each timestep, so old input fades away:
+decay factor `alpha` each timestep, so old input fades away:
 
-: v[t] = alpha * v[t-1] + input[t]
+v[t] = alpha * v[t-1] + input[t]
 
 =alpha= comes from the membrane time constant =tau=. We use the simple
 discrete approximation =alpha = 1 - 2/tau=. With =tau = None= we keep
 =alpha = 1=, i.e. no leak -- so the same code still serves the I node.
 
-** Step 1.1 -- =impl/Neuron.scala= : add =tau= to the Config
+## Step 1.1 -- =impl/Neuron.scala= : add =tau= to the Config
 
 The Config is how a =types/= mapping hands parameters to the datapath.
 Add an optional =tau=.
 
 FIND the =Config= at the bottom of the file:
 
-#+begin_src scala
-  case class Config(
+```scala
+case class Config(
     input: Activations.Config,
     quants: Map[String, QuantizationConfig]
   )
-#+end_src
+```
 
 REPLACE with:
 
