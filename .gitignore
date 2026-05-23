@@ -2,7 +2,9 @@
 *~
 n2f/
 outputs/
-\#*\## Devenv
+\#*\#
+
+# Devenv
 .devenv*
 devenv.local.nix
 
@@ -32,6 +34,8 @@ vivado*.log
 5-results/utilisation-lut-only/verilog
 /4-pynq-inference/debug.ipynb
 /4-pynq-inference/evaluate.ipynb
-iscas26-tutorial/neuron/outputs/*
+iscas26-tutorial/*/outputs/
+# jupytext .py files are the single source of truth for tutorial notebooks
+iscas26-tutorial/**/*.ipynb
 *.ipynb_checkpoints
 .devcontainer/post-create.sh

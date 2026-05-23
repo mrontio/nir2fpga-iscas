@@ -1,0 +1,77 @@
+cff-version: 1.2.0
+message: "If you use NIR2FPGA in your research or teaching, please cite it as follows."
+title: "NIR2FPGA: A Spiking Neural Network to FPGA Compilation Toolchain"
+abstract: >-
+  NIR2FPGA compiles Spiking Neural Networks expressed in the Neuromorphic
+  Intermediate Representation (NIR) into RTL that runs on Xilinx FPGAs.
+  It includes Python-based discretization and quantization, a Scala/SpinalHDL
+  compiler, and a PYNQ-based inference runtime. This repository accompanies
+  the ISCAS 2026 tutorial.
+type: software
+authors:
+  - family-names: Rontionov
+    given-names: Michail
+    email: m.rontionov@soton.ac.uk
+    affiliation: "University of Southampton, Southampton, UK"
+    # orcid: "https://orcid.org/TODO"
+  - family-names: "Ayala Le Brun"
+    given-names: Francisco
+    affiliation: "Independent Researcher, Netherlands"
+    # orcid: "https://orcid.org/TODO"
+  - family-names: Beladel
+    given-names: Nassim
+    affiliation: "ETH Zürich, Zürich, Switzerland"
+    # orcid: "https://orcid.org/TODO"
+  - family-names: Thomas
+    given-names: David
+    affiliation: "University of Southampton, Southampton, UK"
+    orcid: "https://orcid.org/0000-0002-9671-0917"
+  - family-names: Frenkel
+    given-names: Charlotte
+    affiliation: "Delft University of Technology, Netherlands"
+    orcid: "https://orcid.org/0000-0002-1879-0288"
+  - family-names: Pedersen
+    given-names: Jens Egholm
+    email: jegpe@dtu.dk
+    affiliation: "Technical University of Denmark"
+    orcid: "https://orcid.org/0000-0001-6012-7415"
+# Corresponding authors: Michail Rontionov and Jens Egholm Pedersen.
+date-released: 2026-05-23
+version: "0.1.0"
+url: "https://github.com/TODO-org/nir2fpga-iscas"
+repository-code: "https://github.com/TODO-org/nir2fpga-iscas"
+license: Apache-2.0
+keywords:
+  - spiking neural networks
+  - neuromorphic computing
+  - FPGA
+  - hardware compilation
+  - NIR
+  - SpinalHDL
+  - PYNQ
+
+# TODO: once the companion paper is accepted, fill this in. Until then, citing
+# the software entry above is sufficient.
+preferred-citation:
+  type: conference-paper
+  title: "NIR2FPGA: Compiling Dataflow Accelerators from the Neuromorphic Intermediate Representation"
+  authors:
+    - family-names: Rontionov
+      given-names: Michail
+    - family-names: "Ayala Le Brun"
+      given-names: Francisco
+    - family-names: Beladel
+      given-names: Nassim
+    - family-names: Thomas
+      given-names: David
+    - family-names: Frenkel
+      given-names: Charlotte
+    - family-names: Pedersen
+      given-names: Jens Egholm
+  # conference:
+  #   name: "TODO"
+  #   city: "TODO"
+  #   country: "TODO"
+  year: 2026
+  # doi: "TODO"
+  # url: "TODO"

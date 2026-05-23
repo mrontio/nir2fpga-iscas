@@ -50,6 +50,11 @@ labels      = torch.from_numpy(_data["labels"]).long()
 print(f"Dataset inputs : {dataset.shape}, {dataset.dtype}")
 print(f"Dataset labels : {labels.shape}, {labels.dtype}")
 
+# Representative sample — must match the one notebook 1 recorded source traces
+# on (see `sample_index` in 1-definition.py); used for the DiscretizationChoices
+# and the evaluate_characteristic() call below.
+sample_index = 7
+
 
 # %%
 # Example NIR Graphs
@@ -133,7 +138,7 @@ dc = DiscretizationChoices(
     batch_size=dataset.shape[0], # 10
     total_bits=16,
     macWidth=4,
-    representative_sample_index=42,
+    representative_sample_index=sample_index,
     ptq=PTQOptions(method="minmax"),
 )
 
@@ -145,7 +150,7 @@ n2f = NIR2FPGA("n2f", nir_spyx_classifier, dc,
                          primitives_dir=str(primitives_dir)
                      ))
 n2f.report_quantization()
-n2f.save_files()
+n2f.save_files(directory=output_dir)
 # %%
 # Register Spyx source recordings. Layer IDs "0"/"1" match the normalized NIR chain order.
 _src = np.load(str(output_dir / "spyx" / "source_recordings.npz"))
@@ -173,7 +178,7 @@ n2f.evaluate_accuracy(spike_count_pred)
 # n2f.simulate(6)
 n2f.compile()
 # %%
-n2f.evaluate_characteristic(1, output_dir = output_dir / "characteristics")
+n2f.evaluate_characteristic(sample_index, output_dir = output_dir / "characteristics")
 # %%
 from PIL import Image
 

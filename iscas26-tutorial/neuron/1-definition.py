@@ -98,7 +98,10 @@ def make_dataset(
     return jnp.array(data)
 
 dataset = make_dataset()
-sample = dataset[len(dataset) // 2]  # mid-range amplitude
+# A clearly spiking sample, used for the single-neuron recordings below and
+# re-used as the representative sample in notebook 2.
+sample_index = 7
+sample = dataset[sample_index]
 print(f"Dataset shape: {dataset.shape}  (samples, timesteps, inputs)")
 
 # %% [markdown]
@@ -313,26 +316,27 @@ plt.show()
 
 beta_np = np.atleast_1d(np.array(params_lif["LIF"]["beta"]))
 dt = 1  # Spyx uses dt=1 by convention
-tau = dt / (1 - beta_np)
+# Exact: the pipeline uses alpha = exp(-dt/tau), so this tau makes alpha = beta.
+tau = -dt / np.log(beta_np)
 
 nir_lif_spyx = nir.NIRGraph(
     nodes={
-        "input":  nir.Input(input_type=np.array([1])),
+        "input":  nir.Input(input_type={"input": np.array([1])}),
         "lif":    nir.LIF(tau=tau, v_threshold=np.ones_like(beta_np),
                           v_leak=np.zeros_like(beta_np), r=beta_np),
-        "output": nir.Output(output_type=np.array([1])),
+        "output": nir.Output(output_type={"output": np.array([1])}),
     },
     edges=[("input", "lif"), ("lif", "output")],
 )
 
 beta_li_np = np.atleast_1d(np.array(params_li["LI"]["beta"]))
-tau_li = dt / (1 - beta_li_np)
+tau_li = -dt / np.log(beta_li_np)
 
 nir_li_spyx = nir.NIRGraph(
     nodes={
-        "input":  nir.Input(input_type=np.array([1])),
+        "input":  nir.Input(input_type={"input": np.array([1])}),
         "li":     nir.LI(tau=tau_li, v_leak=np.zeros_like(beta_li_np), r=beta_li_np),
-        "output": nir.Output(output_type=np.array([1])),
+        "output": nir.Output(output_type={"output": np.array([1])}),
     },
     edges=[("input", "li"), ("li", "output")],
 )
@@ -368,7 +372,7 @@ print(f"Accuracy over dataset: {correct}/{len(dataset)} = {accuracy:.1%}")
 # Haiku stores hk.Linear weights as (in_features, out_features); NIR expects (out, in).
 W = np.array(train_params["linear"]["w"]).T      # shape (1, 1)
 beta_cls = np.atleast_1d(np.array(train_params["LIF"]["beta"]))
-tau_cls  = dt / (1 - beta_cls)
+tau_cls  = -dt / np.log(beta_cls)
 
 # The sinabs pipeline uses norm_input=True: v[t] = alpha*v + (1-alpha)*input.
 # Spyx trained with r=beta: v[t] = beta*v + beta*input.
@@ -378,7 +382,7 @@ W_nir = W * r_correction
 
 nir_classifier = nir.NIRGraph(
     nodes={
-        "input":  nir.Input(input_type=np.array([1])),
+        "input":  nir.Input(input_type={"input": np.array([1])}),
         "linear": nir.Linear(weight=W_nir),
         "lif":    nir.LIF(
                       tau=tau_cls,
@@ -386,7 +390,7 @@ nir_classifier = nir.NIRGraph(
                       v_leak=np.zeros_like(beta_cls),
                       r=np.ones_like(beta_cls),
                   ),
-        "output": nir.Output(output_type=np.array([1])),
+        "output": nir.Output(output_type={"output": np.array([1])}),
     },
     edges=[("input", "linear"), ("linear", "lif"), ("lif", "output")],
 )
@@ -404,14 +408,15 @@ def spyx_record_fn(x):
     return h, spike_trace, v_trace
 
 SNN_record = hk.without_apply_rng(hk.transform(spyx_record_fn))
-h_rec, spikes_rec, vmem_rec = SNN_record.apply(train_params, x=dataset[0])
+record_sample = dataset[sample_index]
+h_rec, spikes_rec, vmem_rec = SNN_record.apply(train_params, x=record_sample)
 
 np.savez(
     str(spyx_dir / "source_recordings.npz"),
-    linear_input  = np.array(dataset[0]),   # (T, 1)
-    linear_output = np.array(h_rec),        # (T, 1)
-    lif_output    = np.array(spikes_rec),   # (T, 1)
-    lif_v_mem     = np.array(vmem_rec),     # (T, 1)
+    linear_input  = np.array(record_sample),                # (T, 1)
+    linear_output = np.array(h_rec),                        # (T, 1)
+    lif_output    = np.array(spikes_rec).reshape(-1, 1),    # (T, 1)
+    lif_v_mem     = np.array(vmem_rec).reshape(-1, 1),      # (T, 1)
     accuracy      = np.array(accuracy),
 )
 print(f"Saved source recordings to {spyx_dir / 'source_recordings.npz'}")

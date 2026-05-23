@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4348435650532391c2d104ff017f3eb58be81e8123709988fe5c878852d15a0a
-size 213
+{
+  "include": ["1-discretization-quantization/InternalSimulator/InternalSimulator"],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingTypeStubs": false,
+  "reportMissingImports": false
+}
