@@ -46,9 +46,8 @@ first two for you.
 | 1 | [`iscas26-tutorial/neuron/1-definition.ipynb`](iscas26-tutorial/neuron/1-definition.ipynb) | Define a single LIF neuron in [Spyx](https://github.com/kmheckel/spyx), train a tiny classifier, export to NIR. | ~25 min |
 | 2 | [`iscas26-tutorial/mnist/1-mnist.ipynb`](iscas26-tutorial/mnist/1-mnist.ipynb) *(optional)* | Train a 2-layer SNN on MNIST in [Norse](https://github.com/norse/norse), export to NIR, repeat the compile-and-compare loop on a non-trivial model. | ~25 min |
 | 3 | [`iscas26-tutorial/neuron/2-n2f.ipynb`](iscas26-tutorial/neuron/2-n2f.ipynb) | Quantize the NIR graph, compile it to SpinalHDL via `sbt`, and compare the hardware simulation against the JAX reference. | ~30 min |
-| 4 | [`iscas26-tutorial/docs/primitive-evolution.org`](iscas26-tutorial/docs/primitive-evolution.org) *(live-coding)* | Implement the LIF primitive in SpinalHDL yourself. Walk through the I → LI → LIF progression using the `demo` / `main` / `solution` branches. | ~40 min |
 
-- The script I follow for the live coding session is covered [here](iscas26-tutorial/docs/primitive-evolution.org).
+- The script I follow for the live coding session is covered [here](iscas26-tutorial/docs/primitive-evolution.md).
 
 ---
 
